@@ -56,6 +56,7 @@ PlayerStatsDisplay.lua
 BreakTimer.lua
 Profiles.lua
 InterruptDisplay.lua
+BigWigsAlerts.lua
 
 # Encounter Alerts
 EncounterAlerts/Alerts.lua

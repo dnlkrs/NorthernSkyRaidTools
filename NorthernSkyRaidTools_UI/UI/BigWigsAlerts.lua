@@ -1322,12 +1322,12 @@ local function BuildBigWigsAlertsUI(parentFrame)
     local offsetLbl = trigF:CreateFontString(nil, "OVERLAY")
     NSI:SetUIFont(offsetLbl, 12, "")
     offsetLbl:SetTextColor(0.6, 0.6, 0.6, 1)
-    SetLocalizedText(offsetLbl, "Offset (seconds after the BigWigs bar starts)")
+    SetLocalizedText(offsetLbl, "Offset (seconds before the BigWigs timer expires)")
     offsetLbl:SetPoint("TOPLEFT", trigF, "TOPLEFT", 0, -98)
 
     local offsetEntry = CreateTextEntry(trigF, nil, nil, nil, 80, 22,
         nil, nil, nil, "NSUIBWAlertOffset",
-        { title = "Offset", desc = "Delays the alert by this many seconds after the BigWigs bar starts" })
+        { title = "Offset", desc = "Moves the alert this many seconds earlier than the end of the BigWigs bar" })
     offsetEntry:SetPoint("TOPLEFT", trigF, "TOPLEFT", 0, -114)
     offsetEntry.editBox:SetScript("OnEditFocusLost", function(self)
         if trigF._alert then SaveAlertData(trigF._alert, "offset", tonumber(self:GetText()) or 0) end
