@@ -99,6 +99,25 @@ local function GetOptionKey(option)
     return option
 end
 
+local zoneNameCache = {}
+
+-- BigWigs stores instance IDs as positive and world map IDs as negative zoneIds.
+local function GetModuleZoneName(module)
+    local zoneId = tonumber(module.instanceId) or tonumber(module.zoneId)
+    if not zoneId then return "" end
+    if zoneNameCache[zoneId] ~= nil then return zoneNameCache[zoneId] end
+
+    local name
+    if zoneId > 0 then
+        name = GetRealZoneText(zoneId)
+    elseif C_Map and C_Map.GetMapInfo then
+        local info = C_Map.GetMapInfo(-zoneId)
+        name = info and info.name
+    end
+    zoneNameCache[zoneId] = name or ""
+    return zoneNameCache[zoneId]
+end
+
 local timerIndex = nil
 
 local function BuildTimerIndex()
@@ -112,6 +131,7 @@ local function BuildTimerIndex()
             local encID         = GetModuleEncounterID(module)
             local moduleName    = module.moduleName or module.name or tostring(module)
             local moduleDisplay = module.displayName or moduleName
+            local zoneName      = GetModuleZoneName(module)
             local seen          = {}
 
             for _, option in ipairs(GetModuleOptions(module)) do
@@ -126,10 +146,12 @@ local function BuildTimerIndex()
                             encID         = encID,
                             moduleName    = moduleName,
                             moduleDisplay = moduleDisplay,
+                            zoneName      = zoneName,
                             spellID       = spellID,
                             name          = info.name,
                             icon          = info.iconID,
-                            search        = string.lower(info.name .. " " .. moduleDisplay .. " " .. spellID),
+                            search        = string.lower(table.concat(
+                                { info.name, moduleDisplay, zoneName, spellID }, " ")),
                         }
                     end
                 end
@@ -201,6 +223,7 @@ local function BuildBigWigsAlertsUI(parentFrame)
 
     local selectedEncID, selectedKey
     local collapsedGroups = {}
+    local listSearchText  = ""
 
     local rightPanel, RebuildList, SelectAlert, TogglePicker, PreviewAlert
     local enabledCB
@@ -213,7 +236,29 @@ local function BuildBigWigsAlertsUI(parentFrame)
     title:SetPoint("TOPLEFT", screen, "TOPLEFT", pad, topY)
     title:SetText(NSI:Loc("|cFF00FFFFBigWigs|r Alerts"))
 
-    local scrollTop    = topY - 24
+    local listSearchEntry = CreateTextEntry(screen, nil, nil, nil, listW, 22,
+        nil, nil, nil, "NSUIBWAlertListSearch")
+    listSearchEntry:SetPoint("TOPLEFT", screen, "TOPLEFT", pad, topY - 22)
+
+    local listSearchHint = listSearchEntry.editBox:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    listSearchHint:SetText("|TInterface\\Common\\UI-Searchbox-Icon:16:16:0:-2|t  " .. NSI:Loc("Search..."))
+    listSearchHint:SetPoint("LEFT", listSearchEntry.editBox, "LEFT", 2, 0)
+    listSearchHint:SetTextColor(0.5, 0.5, 0.5, 0.6)
+    NSI:SetUIFont(listSearchHint, 14, "")
+
+    local function UpdateListSearchHint(editBox)
+        listSearchHint:SetShown(editBox:GetText() == "" and not editBox:HasFocus())
+    end
+
+    listSearchEntry.editBox:SetScript("OnTextChanged", function(self)
+        listSearchText = self:GetText()
+        UpdateListSearchHint(self)
+        RebuildList()
+    end)
+    listSearchEntry.editBox:HookScript("OnEditFocusGained", function(self) UpdateListSearchHint(self) end)
+    listSearchEntry.editBox:HookScript("OnEditFocusLost",   function(self) UpdateListSearchHint(self) end)
+
+    local scrollTop    = topY - 50
     local scrollHeight = tab_content_height + scrollTop - pad * 2 - 18
 
     local listScroll = CreateFrame("ScrollFrame", "NSUIBWAlertListScroll", screen,
@@ -325,11 +370,20 @@ local function BuildBigWigsAlertsUI(parentFrame)
     -- Flattens the store into an ordered list of group headers and alert rows.
     local function BuildScrollData()
         local groups = {}
+        local filter = string.lower(listSearchText or "")
         for encID, alerts in pairs(GetAlertStore()) do
             local items = {}
             for key, alert in pairs(alerts) do
                 if type(alert) == "table" then
-                    items[#items + 1] = { encID = encID, key = key, data = alert }
+                    local link       = alert.bigwigs or {}
+                    local searchText = string.lower(table.concat({
+                        alert.name or "",
+                        GetEncounterLabel(encID, link.moduleDisplay),
+                        link.timerName or "",
+                    }, " "))
+                    if filter == "" or string.find(searchText, filter, 1, true) then
+                        items[#items + 1] = { encID = encID, key = key, data = alert }
+                    end
                 end
             end
             if #items > 0 then
@@ -521,6 +575,23 @@ local function BuildBigWigsAlertsUI(parentFrame)
     pickerSearchHint:SetTextColor(0.5, 0.5, 0.5, 0.6)
     NSI:SetUIFont(pickerSearchHint, 14, "")
 
+    -- Parented to the editbox so it sits above it and keeps receiving clicks.
+    local pickerSearchClear = CreateFrame("Button", nil, pickerSearchEntry.editBox)
+    pickerSearchClear:SetSize(12, 12)
+    pickerSearchClear:SetFrameLevel(pickerSearchEntry.editBox:GetFrameLevel() + 5)
+    pickerSearchClear:SetPoint("RIGHT", pickerSearchEntry.editBox, "RIGHT", -2, 0)
+    pickerSearchClear:EnableMouse(true)
+    pickerSearchClear:RegisterForClicks("LeftButtonUp")
+    pickerSearchClear:SetNormalTexture([[Interface\AddOns\NorthernSkyRaidTools\Media\Icons\x.png]])
+    pickerSearchClear:SetHighlightTexture([[Interface\AddOns\NorthernSkyRaidTools\Media\Icons\x.png]])
+    pickerSearchClear:GetNormalTexture():SetVertexColor(0.6, 0.6, 0.6, 1)
+    pickerSearchClear:GetHighlightTexture():SetVertexColor(1, 1, 1, 1)
+    pickerSearchClear:SetScript("OnClick", function()
+        pickerSearchEntry.editBox:SetText("")
+        pickerSearchEntry.editBox:ClearFocus()
+    end)
+    pickerSearchClear:Hide()
+
     local pickerResultsH = PICKER_H - 96
     local pickerListW    = PICKER_INNER - 20   -- leaves room for the native scrollbar
     local pickerScroll = CreateFrame("ScrollFrame", "NSUIBWTimerPickerScroll", pickerFrame,
@@ -577,6 +648,17 @@ local function BuildBigWigsAlertsUI(parentFrame)
         row.nameLabel:SetJustifyH("LEFT")
         row.nameLabel:SetWordWrap(false)
 
+        row:SetScript("OnEnter", function(self)
+            if not self._spellID then return end
+            GameTooltip:SetOwner(self, "ANCHOR_NONE")
+            GameTooltip:SetPoint("TOPLEFT", pickerFrame, "TOPRIGHT", 4, 0)
+            GameTooltip:SetSpellByID(self._spellID)
+            GameTooltip:Show()
+        end)
+        row:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+
         row:Hide()
         return row
     end
@@ -600,11 +682,11 @@ local function BuildBigWigsAlertsUI(parentFrame)
                 timerName     = timer.name,
             },
             offset         = 0,
-            DisplayType    = "Text",
+            DisplayType    = s.SpellDisplayType or "Text",
             text           = timer.name,
-            dur            = s.TextDuration or 8,
-            TTS            = s.TextTTS and true or false,
-            TTSTimer       = s.TextTTSTimer or 8,
+            dur            = s.SpellDuration or 8,
+            TTS            = s.SpellTTS and true or false,
+            TTSTimer       = s.SpellTTSTimer or 8,
             countdown      = false,
             sticky         = 0,
             loadConditions = { Classes = {}, SpecIDs = {}, Names = {}, Roles = {} },
@@ -644,6 +726,7 @@ local function BuildBigWigsAlertsUI(parentFrame)
             end
             row.nameLabel:SetText(timer.name)
             row.bossLabel:SetText(GetEncounterLabel(timer.encID, timer.moduleDisplay))
+            row._spellID = timer.spellID
 
             local captured = timer
             row:SetScript("OnClick", function() CreateAlertFromTimer(captured) end)
@@ -671,6 +754,7 @@ local function BuildBigWigsAlertsUI(parentFrame)
 
     local function UpdatePickerSearchHint(editBox)
         pickerSearchHint:SetShown(editBox:GetText() == "" and not editBox:HasFocus())
+        pickerSearchClear:SetShown(editBox:GetText() ~= "")
     end
 
     pickerSearchEntry.editBox:SetScript("OnTextChanged", function(self)
@@ -686,7 +770,7 @@ local function BuildBigWigsAlertsUI(parentFrame)
         GetTimerIndex(true)
         RebuildPickerRows()
     end, 140, "NSUIBWTimerPickerLoadAll",
-        { title = "Load all content", desc = "Loads every BigWigs content module so their timers can be searched" })
+        { title = "Load more content", desc = "Loads more BigWigs modules to search their timers" })
     loadAllBtn:SetPoint("BOTTOMLEFT", pickerFrame, "BOTTOMLEFT", PICKER_PAD, 8)
 
     local closeBtn = CreateLocalizedSubButton(pickerFrame, "Close", function()
