@@ -546,6 +546,9 @@ function NSI:AddMissingDefaults()
             [3306] = {},
         },
 
+        -- BigWigs Alerts
+        BigWigsAlerts = {},
+
         -- Interrupt Display
         InterruptSettings = {
             ShowBar = false,
@@ -633,6 +636,7 @@ local ignored = {
     ["CurrentProfile"]   = true,
     ["MainProfile"]      = true,
     ["EncounterAlerts"]  = true,
+    ["BigWigsAlerts"]    = true,
     ["AuraTrackingSettings"] = true,
     ["AuraSounds"]       = true,
     ["NickNames"]        = true,

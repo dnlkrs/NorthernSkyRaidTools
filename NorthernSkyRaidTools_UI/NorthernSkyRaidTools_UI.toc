@@ -20,6 +20,7 @@ UI\EncounterAlerts.lua
 UI\Cooldowns.lua
 UI\AuraSounds.lua
 UI\General.lua
+UI\BigWigsAlerts.lua
 
 UI\Options\General.lua
 UI\Options\Nicknames.lua

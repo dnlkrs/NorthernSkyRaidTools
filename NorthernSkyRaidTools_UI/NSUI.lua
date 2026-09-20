@@ -24,6 +24,7 @@ local options_button_template      = Core.options_button_template
 
 -- Get UI builder functions from modules
 local BuildEncounterAlertsUI       = NSI.UI.EncounterAlerts.BuildEncounterAlertsUI
+local BuildBigWigsAlertsUI         = NSI.UI.BigWigsAlerts.BuildBigWigsAlertsUI
 local BuildVersionCheckUI          = NSI.UI.VersionCheck.BuildVersionCheckUI
 local BuildNicknameEditUI          = NSI.UI.Nicknames.BuildNicknameEditUI
 local BuildRemindersEditUI         = NSI.UI.Reminders.BuildRemindersEditUI
@@ -72,6 +73,7 @@ local TABS_GROUPS                  = {
         { name = "Reminders",        textKey = "Reminders" },
         { name = "Reminders-Note",   textKey = "Note-Display" },
         { name = "EncounterAlerts",  textKey = "Encounter Alerts" },
+        { name = "BigWigsAlerts",    textKey = "BigWigs Alerts" }
     },
     {
         { name = "AuraSounds", textKey = "Aura Sounds" },
@@ -354,6 +356,7 @@ function NSUI:Init()
     local reminder_note_tab       = tabSystem:GetTabFrameByName("Reminders-Note")
     local assignments_tab         = tabSystem:GetTabFrameByName("Assignments")
     local encounteralerts_tab     = tabSystem:GetTabFrameByName("EncounterAlerts")
+    local bigwigsalerts_tab       = tabSystem:GetTabFrameByName("BigWigsAlerts")
     local interruptdisplay_tab    = tabSystem:GetTabFrameByName("InterruptDisplay")
     local readycheck_tab          = tabSystem:GetTabFrameByName("ReadyCheck")
     local aurasounds_tab          = tabSystem:GetTabFrameByName("AuraSounds")
@@ -463,6 +466,8 @@ function NSUI:Init()
     -- Build custom UI components
     -- --------------------------------------------------------
     NSUI.encounters_frame         = BuildEncounterAlertsUI(encounteralerts_tab)
+    coroutine.yield()
+    NSUI.bigwigsalerts_frame      = BuildBigWigsAlertsUI(bigwigsalerts_tab)
     coroutine.yield()
     NSUI.version_scrollbox        = BuildVersionCheckUI(versions_tab)
     coroutine.yield()
