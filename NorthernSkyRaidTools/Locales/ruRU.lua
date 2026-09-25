@@ -56,6 +56,7 @@ L["Exports your profile together with Encounter Alerts, Aura Sounds and Aura Tra
 L["Includes Encounter Alerts, Aura Sounds and Aura Tracking. Nicknames are never included."] = "Включает оповещения боёв, звуки аур и отслеживание аур. Никнеймы никогда не включаются."
 L["Accept"] = "Принять"
 L["|cFFCFCFCFLeft click|r: Show/Hide Options Window"] = "|cFFCFCFCFЛКМ|r: Показать/скрыть окно настроек"
+L["|cFF00FFFFNSRT|r Northern Sky Raid Tools UI is disabled. Enable the Northern Sky Raid Tools - UI addon in the AddOns list and reload the interface."] = "|cFF00FFFFNSRT|r Интерфейс Northern Sky Raid Tools отключён. Включите аддон Northern Sky Raid Tools - UI в списке аддонов и перезагрузите интерфейс."
 
 -- ============================================================================
 -- SlashCommands.lua
@@ -1651,3 +1652,5 @@ L["Can Apply Aura"] = "Может применить ауру"
 L["Boss Aura"] = "Аура босса"
 L["Boss or Role Aura"] = "Аура босса или ролевая"
 L["Enabled requires this property. Inverted requires the property to be false."] = "Если включено, то требуется наличие этого свойства. Если инвертировано, то требуется, чтобы свойство было ложным."
+L["Pre-Pot Reminder (Seconds Before Pull)"] = "Напоминание о препотe (сек. до пулла)"
+L["How many seconds before the pull the pre-pot reminder appears."] = "За сколько секунд до пулла появляется напоминание о препотe."
